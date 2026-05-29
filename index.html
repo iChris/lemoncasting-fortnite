@@ -590,7 +590,7 @@
       btn.disabled = true;
       btn.textContent = 'Saving…';
       try {
-        const res = await fetch('/api/snapshot', { method: 'POST' });
+        const res = await fetch('/api/save-snapshot', { method: 'POST' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         btn.textContent = 'Saved!';
         historyData = null;

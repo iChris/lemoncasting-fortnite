@@ -27,23 +27,18 @@ async function saveSnapshot(period, data) {
   if (!res.ok) throw new Error(`Supabase insert failed: ${res.status}`);
 }
 
-async function run(periods) {
-  const data = await fetchStats();
-  await Promise.all(periods.map((p) => saveSnapshot(p, data)));
-  return { statusCode: 200, body: JSON.stringify({ saved: periods }) };
-}
-
-// Manual POST trigger via /api/snapshot
-exports.handler = schedule("@weekly", async (event) => {
-  if (event.httpMethod === "POST") {
-    return run(["weekly"]);
-  }
-
-  // Scheduled run — also save monthly/yearly on the right days
+// Scheduled function — runs @weekly automatically
+exports.handler = schedule("@weekly", async () => {
   const now = new Date();
   const periods = ["weekly"];
   if (now.getDate() === 1) periods.push("monthly");
   if (now.getMonth() === 0 && now.getDate() === 1) periods.push("yearly");
 
-  return run(periods);
+  const data = await fetchStats();
+  await Promise.all(periods.map((p) => saveSnapshot(p, data)));
+  console.log(`Saved snapshot(s): ${periods.join(", ")}`);
+  return { statusCode: 200 };
 });
+
+module.exports.fetchStats = fetchStats;
+module.exports.saveSnapshot = saveSnapshot;
