@@ -1,0 +1,15 @@
+{
+  "name": "lemoncasting-fortnite",
+  "version": "1.0.0",
+  "description": "A minimal web dashboard for Fortnite player stats, powered by [fortnite-api.com](https://fortnite-api.com).",
+  "main": "stats.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@netlify/functions": "^5.2.2"
+  }
+}

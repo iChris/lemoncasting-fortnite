@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lemoncasting-fortnite",
+      "runtimeExecutable": "/Users/chris-studio/.nvm/versions/node/v22.22.2/bin/node",
+      "runtimeArgs": ["/Users/chris-studio/.npm-global-v22/bin/netlify", "dev", "--port", "3000"],
+      "port": 3000
+    }
+  ]
+}

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lemoncasting — Fortnite Stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f6f3;
+      --surface: #ffffff;
+      --border: #e8e6e1;
+      --text-primary: #1a1915;
+      --text-secondary: #6b6860;
+      --text-muted: #a8a49e;
+      --accent: #2d6a4f;
+      --accent-light: #e8f5ee;
+      --accent-2: #c9782a;
+      --accent-2-light: #fdf2e7;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .player-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .player-name span {
+      color: var(--accent);
+    }
+
+    .last-updated {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* Tab nav */
+    .tab-nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+
+    .tab-nav-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0;
+    }
+
+    .tab-btn {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 14px 18px 12px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      letter-spacing: 0.01em;
+    }
+
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Main */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 24px 60px;
+    }
+
+    /* Loading / Error */
+    .state-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 24px;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Section label */
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      margin-top: 32px;
+    }
+
+    .section-label:first-child { margin-top: 0; }
+
+    /* Stat grid */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.04s; }
+    .stat-card:nth-child(2) { animation-delay: 0.08s; }
+    .stat-card:nth-child(3) { animation-delay: 0.12s; }
+    .stat-card:nth-child(4) { animation-delay: 0.16s; }
+    .stat-card:nth-child(5) { animation-delay: 0.20s; }
+    .stat-card:nth-child(6) { animation-delay: 0.24s; }
+
+    .stat-label {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .stat-card.highlight {
+      background: var(--accent-light);
+      border-color: #b8ddc8;
+    }
+
+    .stat-card.highlight .stat-value {
+      color: var(--accent);
+    }
+
+    .stat-card.warn {
+      background: var(--accent-2-light);
+      border-color: #f0d0a8;
+    }
+
+    .stat-card.warn .stat-value {
+      color: var(--accent-2);
+    }
+
+    /* Mode breakdown */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .mode-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: 80px 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .mode-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .mode-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .mode-stat-val {
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .mode-stat-label {
+      font-size: 0.67rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Match history */
+    .match-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .match-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 20px;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto auto;
+      gap: 16px;
+      align-items: center;
+      animation: fadeUp 0.25s ease both;
+    }
+
+    .match-placement {
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      min-width: 32px;
+      text-align: center;
+    }
+
+    .match-placement.win {
+      color: var(--accent);
+    }
+
+    .match-mode {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .match-kills {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .match-time {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .badge.loss {
+      background: var(--bg);
+      color: var(--text-muted);
+    }
+
+    .no-data {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 32px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    /* History */
+    .history-group { margin-bottom: 32px; }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      font-size: 0.82rem;
+    }
+
+    .history-table th {
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    .history-table td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    .history-table tr:last-child td { border-bottom: none; }
+
+    .history-table td:not(:first-child) {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+    }
+
+    .history-table td.highlight { color: var(--accent); font-weight: 500; }
+    .history-table td.warn { color: var(--accent-2); }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      header { padding: 16px 16px; }
+      .tab-nav { padding: 0 16px; }
+      main { padding: 20px 16px 48px; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+
+      .mode-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+      }
+
+      .mode-name {
+        grid-column: 1 / -1;
+        font-size: 0.85rem;
+        margin-bottom: 4px;
+      }
+
+      .match-row {
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 8px;
+      }
+
+      .match-time { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="player-name">🎮 <span>Lemoncasting</span></div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <a href="https://www.youtube.com/@gamingwithalemon" target="_blank" rel="noopener noreferrer" style="font-size:0.78rem;font-weight:500;color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          YouTube
+        </a>
+        <div class="last-updated" id="lastUpdated">—</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tab-nav">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="modes">By Mode</button>
+      <button class="tab-btn" data-tab="season">This Season</button>
+      <button class="tab-btn" data-tab="history">History</button>
+    </div>
+  </nav>
+
+  <main id="main">
+    <div class="state-box"><div class="spinner"></div><span>Loading stats…</span></div>
+  </main>
+
+  <script>
+    let rawData = null;
+    let historyData = null;
+    let activeTab = 'overview';
+
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        activeTab = btn.dataset.tab;
+        if (rawData) render();
+      });
+    });
+
+    function fmt(n) {
+      if (n === undefined || n === null) return '—';
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+      if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+      return n.toLocaleString();
+    }
+
+    function pct(n) {
+      if (n === undefined || n === null) return '—';
+      return n.toFixed(1) + '%';
+    }
+
+    function ratio(kills, matches) {
+      if (!kills || !matches) return '—';
+      return (kills / matches).toFixed(2);
+    }
+
+    function modeLabel(key) {
+      const map = { solo: 'Solos', duo: 'Duos', squad: 'Squads', ltm: 'LTM', overall: 'All Modes' };
+      return map[key] || key;
+    }
+
+    function statCard(label, value, type = '') {
+      return `<div class="stat-card ${type}">
+        <div class="stat-label">${label}</div>
+        <div class="stat-value">${value}</div>
+      </div>`;
+    }
+
+    function modeRow(label, data) {
+      if (!data) return '';
+      return `<div class="mode-row">
+        <div class="mode-name">${label}</div>
+        <div class="mode-stat"><div class="mode-stat-val">${fmt(data.wins)}</div><div class="mode-stat-label">Wins</div></div>
+        <div class="mode-stat"><div class="mode-stat-val">${pct(data.winRate)}</div><div class="mode-stat-label">Win %</div></div>
+        <div class="mode-stat"><div class="mode-stat-val">${fmt(data.kills)}</div><div class="mode-stat-label">Kills</div></div>
+        <div class="mode-stat"><div class="mode-stat-val">${data.kd ? data.kd.toFixed(2) : '—'}</div><div class="mode-stat-label">K/D</div></div>
+      </div>`;
+    }
+
+    function renderOverview(stats) {
+      const o = stats?.all?.overall;
+      if (!o) return '<div class="no-data">No lifetime stats available.</div>';
+      return `
+        <div class="section-label">Lifetime Overview</div>
+        <div class="stat-grid">
+          ${statCard('Wins', fmt(o.wins), 'highlight')}
+          ${statCard('Win Rate', pct(o.winRate), 'highlight')}
+          ${statCard('K/D Ratio', o.kd ? o.kd.toFixed(2) : '—', 'warn')}
+          ${statCard('Kills', fmt(o.kills))}
+          ${statCard('Matches', fmt(o.matches))}
+          ${statCard('Kills / Match', ratio(o.kills, o.matches))}
+          ${statCard('Top 10s', fmt(o.top10))}
+          ${statCard('Top 25s', fmt(o.top25))}
+          ${statCard('Score / Match', o.scorePerMatch ? Math.round(o.scorePerMatch).toLocaleString() : '—')}
+          ${statCard('Minutes Played', fmt(o.minutesPlayed))}
+          ${statCard('Players Outlived', fmt(o.playersOutlived))}
+        </div>
+      `;
+    }
+
+    function renderModes(stats) {
+      const a = stats?.all;
+      if (!a) return '<div class="no-data">No mode breakdown available.</div>';
+      return `
+        <div class="section-label">Breakdown by Mode</div>
+        <div class="mode-grid">
+          ${modeRow('Overall', a.overall)}
+          ${modeRow('Solos', a.solo)}
+          ${modeRow('Duos', a.duo)}
+          ${modeRow('Squads', a.squad)}
+          ${modeRow('LTM', a.ltm)}
+        </div>
+      `;
+    }
+
+    function renderSeason(stats) {
+      const o = stats?.all?.overall;
+      if (!o) return '<div class="no-data">No season stats available yet.</div>';
+      return `
+        <div class="section-label">This Season</div>
+        <div class="stat-grid">
+          ${statCard('Wins', fmt(o.wins), 'highlight')}
+          ${statCard('Win Rate', pct(o.winRate), 'highlight')}
+          ${statCard('K/D Ratio', o.kd ? o.kd.toFixed(2) : '—', 'warn')}
+          ${statCard('Kills', fmt(o.kills))}
+          ${statCard('Matches', fmt(o.matches))}
+          ${statCard('Kills / Match', ratio(o.kills, o.matches))}
+          ${statCard('Top 10s', fmt(o.top10))}
+          ${statCard('Minutes Played', fmt(o.minutesPlayed))}
+        </div>
+
+        <div class="section-label">By Mode — This Season</div>
+        <div class="mode-grid">
+          ${modeRow('Solos', stats?.all?.solo)}
+          ${modeRow('Duos', stats?.all?.duo)}
+          ${modeRow('Squads', stats?.all?.squad)}
+        </div>
+      `;
+    }
+
+    function renderHistory(rows) {
+      if (!rows || rows.length === 0) {
+        return '<div class="no-data">No snapshots yet — stats are saved automatically each week. You can also trigger a manual save below.</div>' +
+          '<div style="margin-top:16px;"><button onclick="saveSnapshot()" style="font-family:var(--sans);font-size:0.82rem;font-weight:500;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 20px;cursor:pointer;">Save Snapshot Now</button></div>';
+      }
+
+      const groups = { weekly: [], monthly: [], yearly: [] };
+      rows.forEach(r => { if (groups[r.period]) groups[r.period].push(r); });
+
+      const tableFor = (title, items) => {
+        if (!items.length) return '';
+        const head = `<tr><th>Date</th><th>Wins</th><th>K/D</th><th>Kills</th><th>Matches</th><th>Win %</th></tr>`;
+        const body = items.map(r => {
+          const o = r.data?.lifetime?.data?.stats?.all?.overall;
+          const date = new Date(r.captured_at).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+          if (!o) return `<tr><td>${date}</td><td colspan="5" style="color:var(--text-muted)">No data</td></tr>`;
+          return `<tr>
+            <td>${date}</td>
+            <td class="highlight">${fmt(o.wins)}</td>
+            <td class="warn">${o.kd ? o.kd.toFixed(2) : '—'}</td>
+            <td>${fmt(o.kills)}</td>
+            <td>${fmt(o.matches)}</td>
+            <td>${pct(o.winRate)}</td>
+          </tr>`;
+        }).join('');
+        return `<div class="history-group">
+          <div class="section-label">${title}</div>
+          <table class="history-table"><thead>${head}</thead><tbody>${body}</tbody></table>
+        </div>`;
+      };
+
+      return tableFor('Yearly Snapshots', groups.yearly) +
+             tableFor('Monthly Snapshots', groups.monthly) +
+             tableFor('Weekly Snapshots', groups.weekly) +
+             '<div style="margin-top:16px;"><button onclick="saveSnapshot()" style="font-family:var(--sans);font-size:0.82rem;font-weight:500;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 20px;cursor:pointer;">Save Snapshot Now</button></div>';
+    }
+
+    async function saveSnapshot() {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      try {
+        const res = await fetch('/api/snapshot', { method: 'POST' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        btn.textContent = 'Saved!';
+        historyData = null;
+        await loadHistory();
+        render();
+      } catch (e) {
+        btn.textContent = 'Failed — try again';
+        btn.disabled = false;
+      }
+    }
+
+    function render() {
+      const main = document.getElementById('main');
+      const lifetime = rawData?.lifetime?.data;
+      const season = rawData?.season?.data;
+
+      if (activeTab === 'overview') main.innerHTML = renderOverview(lifetime?.stats);
+      else if (activeTab === 'modes') main.innerHTML = renderModes(lifetime?.stats);
+      else if (activeTab === 'season') main.innerHTML = renderSeason(season?.stats);
+      else if (activeTab === 'history') main.innerHTML = renderHistory(historyData);
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/history');
+        if (res.ok) historyData = await res.json();
+      } catch (_) {}
+    }
+
+    async function load() {
+      try {
+        const res = await fetch('/api/stats');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        rawData = await res.json();
+
+        const now = new Date();
+        document.getElementById('lastUpdated').textContent =
+          'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        render();
+      } catch (e) {
+        document.getElementById('main').innerHTML =
+          `<div class="state-box">⚠️ Could not load stats — ${e.message}</div>`;
+      }
+    }
+
+    load();
+    loadHistory();
+  </script>
+</body>
+</html>
